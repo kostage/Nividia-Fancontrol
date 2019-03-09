@@ -1,9 +1,27 @@
 from time import sleep
 from socket import gethostname
 import subprocess, os
+import sys
 
 _hostName = gethostname()
 _verboseExecution = False
+
+NC = 0
+YELLOW = 1
+RED = 2
+GREEN = 3
+BLUE = 4
+
+color_pref = [
+	"\x1b[0m",
+	"\x1b[01;33m",
+	"\x1b[01;31m",
+	"\x1b[01;32m",
+	"\x1b[01;34m"
+]
+
+def print_color(color, *args, **kwargs):
+	print(color_pref[color] + "".join(map(str,args)) + "\x1b[0m", **kwargs, file=sys.stderr)
 
 #Enables / Disables verbose execution
 def setVerboseExecution(en):
@@ -13,7 +31,7 @@ def setVerboseExecution(en):
 def execCmd(cmd, encoding='utf-8'):
 	global _verboseExecution
 	if _verboseExecution:
-		print("execCmd(cmd): %s" % (str(cmd)))
+		print_color(NC, "execCmd(cmd): %s" % (str(cmd)))
 	p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	return (int(p.returncode), str(p.stdout.decode(encoding)), str(p.stderr.decode(encoding)))
 #Gets the current XDisplay the process is using
@@ -25,8 +43,8 @@ def getGpuTemp(gpu=0):
 	if(res[0] == 0):
 		return int(res[1])
 	else:
-		print('Could not get GPU temperature!')
-		print('Output: ' + str(res[1]))
+		print_color(NC, 'Could not get GPU temperature!')
+		print_color(NC, 'Output: ' + str(res[1]))
 		quit()
 #Returns the current driver version
 def getDriverVersion(gpu=0):
@@ -58,6 +76,8 @@ def trySetFanSpeed(speed, fan=0, legacy=False):
 		speed = 100
 	if(speed < 0):
 		speed = 0
+	if (speed > 0 and speed < 20):
+		speed = 20
 	attrName = 'GPUTargetFanSpeed'
 	if(legacy):
 		attrName = 'GPUCurrentFanSpeed'
@@ -80,13 +100,13 @@ def interpFanCurve(fanCurve, temp):
 			b = sMin - m * tMin
 			return m * temp + b
 		last = cur
-	return 100
+	return 50
 
 class FanError(Exception):
 	def __init__(self, msg, reason="Unknown"):
 		self._msg = msg
 		self._reason = reason
-		
+
 	def __str__(self):
 		return self._msg + ": " + self._reason
 class NVFan:
@@ -110,4 +130,4 @@ class NVFan:
 		return (True, "OK")
 
 if(__name__ == "__main__"):
-	print("This is a library, not a program!")
+	print_color(NC, "This is a library, not a program!")
